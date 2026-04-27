@@ -29,9 +29,6 @@ export default function App() {
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const scrollPosRef = useRef<number>(0);
-  const isDraggingRef = useRef(false);
-  const startYRef = useRef(0);
-  const startScrollPosRef = useRef(0);
 
   const pixelsPerSecond = speed * 40;
 
@@ -51,8 +48,13 @@ export default function App() {
 
     scrollPosRef.current += pixelsPerSecond * delta;
     
+    // Hybrid approach: use scrollTop for integer part, transform for sub-pixel precision
+    const integerPart = Math.floor(scrollPosRef.current);
+    const subpixelPart = scrollPosRef.current % 1;
+
+    el.scrollTop = integerPart;
     if (textRef.current) {
-      textRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
+      textRef.current.style.transform = `translateY(-${subpixelPart}px)`;
     }
 
     const pct = maxScroll > 0 ? Math.min(100, (scrollPosRef.current / maxScroll) * 100) : 0;
@@ -65,39 +67,13 @@ export default function App() {
     }
   }, [pixelsPerSecond]);
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (mode !== 'prompter') return;
-    isDraggingRef.current = true;
-    startYRef.current = e.clientY;
-    startScrollPosRef.current = scrollPosRef.current;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDraggingRef.current) return;
-    const deltaY = e.clientY - startYRef.current;
-    scrollPosRef.current = Math.max(0, startScrollPosRef.current - deltaY);
-    if (textRef.current) {
-      textRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const currentInt = Math.floor(scrollPosRef.current);
+    if (el.scrollTop !== currentInt) {
+      scrollPosRef.current = el.scrollTop;
     }
   };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    isDraggingRef.current = false;
-    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
-  };
-
-  useEffect(() => {
-    if (mode !== 'prompter') return;
-    const handleWheel = (e: WheelEvent) => {
-      scrollPosRef.current = Math.max(0, scrollPosRef.current + e.deltaY);
-      if (textRef.current) {
-        textRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
-      }
-    };
-    window.addEventListener('wheel', handleWheel);
-    return () => window.removeEventListener('wheel', handleWheel);
-  }, [mode]);
 
   // Handle play/pause state changes
   useEffect(() => {
@@ -108,9 +84,9 @@ export default function App() {
       rafRef.current = requestAnimationFrame(scroll);
     }
     return () => cancelAnimationFrame(rafRef.current);
-  }, [isPlaying]);
+  }, [isPlaying, scroll]);
 
-  // Handle speed/scroll changes separately to avoid timer resets
+  // Handle speed changes
   useEffect(() => {
     if (isPlaying) {
       cancelAnimationFrame(rafRef.current);
@@ -122,6 +98,7 @@ export default function App() {
     setIsPlaying(false);
     setProgress(0);
     scrollPosRef.current = 0;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
     if (textRef.current) textRef.current.style.transform = 'translateY(0)';
   };
 
@@ -302,18 +279,15 @@ export default function App() {
 
   // Prompter Mode
   return (
-    <div
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      style={{
-        position: 'fixed', inset: 0, background: '#000',
-        display: 'flex', flexDirection: 'column',
-        transform: mirrored ? 'scaleX(-1)' : 'none',
-        touchAction: 'none',
-        cursor: isDraggingRef.current ? 'grabbing' : 'grab',
-      }}>
+    <div style={{
+      position: 'fixed', inset: 0, background: '#000',
+      display: 'flex', flexDirection: 'column',
+      transform: mirrored ? 'scaleX(-1)' : 'none',
+    }}>
+      <style>{`
+        .prompter-container::-webkit-scrollbar { display: none; }
+        .prompter-container { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
       {/* Progress bar */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.08)', zIndex: 50 }}>
         <div style={{
@@ -326,10 +300,13 @@ export default function App() {
       {/* Scrolling text */}
       <div
         ref={scrollRef}
+        onScroll={handleScroll}
+        className="prompter-container"
         style={{
-          flex: 1, overflowY: 'hidden', padding: '10vh 12vw',
+          flex: 1, overflowY: 'auto', padding: '10vh 12vw',
           maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 75%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 75%, transparent 100%)',
+          WebkitOverflowScrolling: 'touch', // Smooth inertia scroll on iOS
         }}>
         <p
           ref={textRef}
@@ -342,6 +319,7 @@ export default function App() {
             whiteSpace: 'pre-wrap',
             textAlign: textAlign,
             paddingBottom: '80vh',
+            pointerEvents: 'none', // Allow dragging the container instead of selecting text
           }}>
           {text}
         </p>
