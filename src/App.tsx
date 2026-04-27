@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Settings, ChevronLeft, FlipHorizontal2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, ChevronLeft, FlipHorizontal2, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 
 const DEFAULT_TEXT = `Vitajte vo vašom teleprompteri.
 
@@ -22,12 +22,16 @@ export default function App() {
   const [mirrored, setMirrored] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
   const scrollPosRef = useRef<number>(0);
+  const isDraggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startScrollPosRef = useRef(0);
 
   const pixelsPerSecond = speed * 40;
 
@@ -60,6 +64,40 @@ export default function App() {
       setIsPlaying(false);
     }
   }, [pixelsPerSecond]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    if (mode !== 'prompter') return;
+    isDraggingRef.current = true;
+    startYRef.current = e.clientY;
+    startScrollPosRef.current = scrollPosRef.current;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    const deltaY = e.clientY - startYRef.current;
+    scrollPosRef.current = Math.max(0, startScrollPosRef.current - deltaY);
+    if (textRef.current) {
+      textRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    isDraggingRef.current = false;
+    (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
+  useEffect(() => {
+    if (mode !== 'prompter') return;
+    const handleWheel = (e: WheelEvent) => {
+      scrollPosRef.current = Math.max(0, scrollPosRef.current + e.deltaY);
+      if (textRef.current) {
+        textRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
+      }
+    };
+    window.addEventListener('wheel', handleWheel);
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [mode]);
 
   // Handle play/pause state changes
   useEffect(() => {
@@ -222,6 +260,30 @@ export default function App() {
               </button>
             </div>
 
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 12 }}>
+                Zarovnanie textu
+              </label>
+              <div style={{ display: 'flex', gap: 8, background: 'var(--bg-card)', padding: 4, borderRadius: 10, border: '1px solid var(--border)' }}>
+                {(['left', 'center', 'right'] as const).map(align => (
+                  <button
+                    key={align}
+                    onClick={() => setTextAlign(align)}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: '8px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: textAlign === align ? 'var(--accent)' : 'transparent',
+                      color: textAlign === align ? 'white' : 'var(--text-muted)',
+                      transition: 'all 0.2s',
+                    }}>
+                    {align === 'left' && <AlignLeft size={18} />}
+                    {align === 'center' && <AlignCenter size={18} />}
+                    {align === 'right' && <AlignRight size={18} />}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Keyboard shortcuts */}
             <div style={{ marginTop: 'auto', padding: '16px', background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border)' }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Skratky</p>
@@ -240,11 +302,18 @@ export default function App() {
 
   // Prompter Mode
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: '#000',
-      display: 'flex', flexDirection: 'column',
-      transform: mirrored ? 'scaleX(-1)' : 'none',
-    }}>
+    <div
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      style={{
+        position: 'fixed', inset: 0, background: '#000',
+        display: 'flex', flexDirection: 'column',
+        transform: mirrored ? 'scaleX(-1)' : 'none',
+        touchAction: 'none',
+        cursor: isDraggingRef.current ? 'grabbing' : 'grab',
+      }}>
       {/* Progress bar */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, background: 'rgba(255,255,255,0.08)', zIndex: 50 }}>
         <div style={{
@@ -271,7 +340,7 @@ export default function App() {
             fontFamily: 'DM Sans, Inter, sans-serif',
             fontWeight: 500,
             whiteSpace: 'pre-wrap',
-            textAlign: 'center',
+            textAlign: textAlign,
             paddingBottom: '80vh',
           }}>
           {text}
@@ -330,6 +399,28 @@ export default function App() {
               onChange={setSpeed} displayValue={`${speed}x`} dark />
             <SettingSlider id="prompter-font-slider" label="Veľkosť písma" value={fontSize} min={18} max={72} step={2}
               onChange={setFontSize} displayValue={`${fontSize}px`} dark />
+
+            <div style={{ marginTop: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: 12 }}>Zarovnanie</span>
+              <div style={{ display: 'flex', gap: 8, background: 'rgba(255,255,255,0.05)', padding: 4, borderRadius: 10 }}>
+                {(['left', 'center', 'right'] as const).map(align => (
+                  <button
+                    key={align}
+                    onClick={() => setTextAlign(align)}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: '8px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                      background: textAlign === align ? 'var(--accent)' : 'transparent',
+                      color: textAlign === align ? 'white' : 'rgba(255,255,255,0.4)',
+                      transition: 'all 0.2s',
+                    }}>
+                    {align === 'left' && <AlignLeft size={16} />}
+                    {align === 'center' && <AlignCenter size={16} />}
+                    {align === 'right' && <AlignRight size={16} />}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
