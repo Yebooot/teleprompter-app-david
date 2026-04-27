@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, RotateCcw, Settings, ChevronLeft, FlipHorizontal2 } from 'lucide-react';
 
-const DEFAULT_TEXT = `Welcome to your teleprompter.
+const DEFAULT_TEXT = `Vitajte vo vašom teleprompteri.
 
-Paste your script here and press the Play button to begin scrolling. You can adjust the speed and font size using the controls on the right.
+Sem vložte svoj scenár a stlačením tlačidla Prehrať spustite posúvanie. Rýchlosť a veľkosť písma môžete upraviť pomocou ovládacích prvkov vpravo.
 
-Take a deep breath. Speak clearly and at your own pace. The text will follow you.
+Zhlboka sa nadýchnite. Hovorte jasne a vlastným tempom. Text vás bude nasledovať.
 
-Remember: good eye contact with the camera creates connection with your audience. Try to read slightly ahead so your delivery feels natural.
+Pamätajte: dobrý očný kontakt s kamerou vytvára spojenie s vaším publikom. Skúste čítať mierne dopredu, aby váš prejav pôsobil prirodzene.
 
-You've got this.`;
+Držíme vám palce!`;
 
 type Mode = 'editor' | 'prompter';
 
@@ -112,7 +112,7 @@ export default function App() {
             </div>
             <div>
               <h1 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'DM Sans, sans-serif' }}>Teleprompter</h1>
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Smooth. Professional. Yours.</p>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Hladký. Profesionálny. Váš.</p>
             </div>
           </div>
           <button
@@ -128,7 +128,7 @@ export default function App() {
               transition: 'all 0.2s',
               boxShadow: text.trim() ? '0 0 24px var(--accent-glow)' : 'none',
             }}>
-            Start Prompter →
+            Spustiť prompter →
           </button>
         </header>
 
@@ -137,13 +137,13 @@ export default function App() {
           {/* Editor */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '28px 32px' }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-              Script
+              Scenár
             </label>
             <textarea
               id="script-textarea"
               value={text}
               onChange={e => setText(e.target.value)}
-              placeholder="Paste your script here..."
+              placeholder="Sem vložte svoj scenár..."
               style={{
                 flex: 1,
                 background: 'var(--bg-card)',
@@ -163,7 +163,7 @@ export default function App() {
             />
             <div style={{ marginTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                {text.split(/\s+/).filter(Boolean).length} words
+                {text.split(/\s+/).filter(Boolean).length} slov
               </span>
             </div>
           </div>
@@ -173,16 +173,16 @@ export default function App() {
             width: 280, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)',
             padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: 28,
           }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Settings</label>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nastavenia</label>
 
-            <SettingSlider id="speed-slider" label="Scroll Speed" value={speed} min={1} max={10} step={0.5}
+            <SettingSlider id="speed-slider" label="Rýchlosť posúvania" value={speed} min={1} max={10} step={0.5}
               onChange={setSpeed} displayValue={`${speed}x`} />
-            <SettingSlider id="font-size-slider" label="Font Size" value={fontSize} min={18} max={72} step={2}
+            <SettingSlider id="font-size-slider" label="Veľkosť písma" value={fontSize} min={18} max={72} step={2}
               onChange={setFontSize} displayValue={`${fontSize}px`} />
 
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 12 }}>
-                Options
+                Možnosti
               </label>
               <button
                 id="mirror-toggle-btn"
@@ -196,15 +196,15 @@ export default function App() {
                   cursor: 'pointer', fontSize: 13, fontWeight: 500, transition: 'all 0.2s',
                 }}>
                 <FlipHorizontal2 size={16} />
-                Mirror Text
-                {mirrored && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#a78bfa' }}>ON</span>}
+                Zrkadlový text
+                {mirrored && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#a78bfa' }}>ZAP</span>}
               </button>
             </div>
 
             {/* Keyboard shortcuts */}
             <div style={{ marginTop: 'auto', padding: '16px', background: 'var(--bg-card)', borderRadius: 10, border: '1px solid var(--border)' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Shortcuts</p>
-              {[['Space', 'Play / Pause'], ['R', 'Reset'], ['Esc', 'Back to editor']].map(([k, v]) => (
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Skratky</p>
+              {[['Medzerník', 'Hrať / Pauza'], ['R', 'Resetovať'], ['Esc', 'Späť do editora']].map(([k, v]) => (
                 <div key={k} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{v}</span>
                   <kbd style={{ fontSize: 11, background: 'var(--bg-surface)', color: 'var(--text-primary)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--border)' }}>{k}</kbd>
@@ -265,11 +265,11 @@ export default function App() {
         borderRadius: 999, padding: '10px 20px',
         zIndex: 100,
       }}>
-        <button id="back-btn" onClick={handleBack} title="Back to editor" style={iconBtnStyle}>
+        <button id="back-btn" onClick={handleBack} title="Späť do editora" style={iconBtnStyle}>
           <ChevronLeft size={18} color="rgba(255,255,255,0.7)" />
         </button>
         <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
-        <button id="reset-btn" onClick={handleReset} title="Reset (R)" style={iconBtnStyle}>
+        <button id="reset-btn" onClick={handleReset} title="Resetovať (R)" style={iconBtnStyle}>
           <RotateCcw size={18} color="rgba(255,255,255,0.7)" />
         </button>
         <button
@@ -291,7 +291,7 @@ export default function App() {
         </button>
 
         <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
-        <button id="settings-btn" onClick={() => setShowSettings(s => !s)} title="Settings" style={{ ...iconBtnStyle, color: showSettings ? '#a78bfa' : undefined }}>
+        <button id="settings-btn" onClick={() => setShowSettings(s => !s)} title="Nastavenia" style={{ ...iconBtnStyle, color: showSettings ? '#a78bfa' : undefined }}>
           <Settings size={18} color={showSettings ? '#a78bfa' : 'rgba(255,255,255,0.7)'} />
         </button>
 
@@ -303,9 +303,9 @@ export default function App() {
             border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px 24px',
             minWidth: 280, display: 'flex', flexDirection: 'column', gap: 20,
           }}>
-            <SettingSlider id="prompter-speed-slider" label="Speed" value={speed} min={1} max={10} step={0.5}
+            <SettingSlider id="prompter-speed-slider" label="Rýchlosť" value={speed} min={1} max={10} step={0.5}
               onChange={setSpeed} displayValue={`${speed}x`} dark />
-            <SettingSlider id="prompter-font-slider" label="Font Size" value={fontSize} min={18} max={72} step={2}
+            <SettingSlider id="prompter-font-slider" label="Veľkosť písma" value={fontSize} min={18} max={72} step={2}
               onChange={setFontSize} displayValue={`${fontSize}px`} dark />
           </div>
         )}
