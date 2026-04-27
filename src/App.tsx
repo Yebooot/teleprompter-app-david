@@ -24,46 +24,67 @@ export default function App() {
   const [progress, setProgress] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
   const rafRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
+  const scrollPosRef = useRef<number>(0);
 
-  const pixelsPerSecond = speed * 20;
+  const pixelsPerSecond = speed * 40;
 
   const scroll = useCallback((timestamp: number) => {
-    if (!scrollRef.current) return;
-    if (lastTimeRef.current === 0) lastTimeRef.current = timestamp;
+    if (!scrollRef.current || !textRef.current) return;
+    if (lastTimeRef.current === 0) {
+      lastTimeRef.current = timestamp;
+      rafRef.current = requestAnimationFrame(scroll);
+      return;
+    }
+
     const delta = (timestamp - lastTimeRef.current) / 1000;
     lastTimeRef.current = timestamp;
 
     const el = scrollRef.current;
-    el.scrollTop += pixelsPerSecond * delta;
-
     const maxScroll = el.scrollHeight - el.clientHeight;
-    const pct = maxScroll > 0 ? Math.min(100, (el.scrollTop / maxScroll) * 100) : 0;
+
+    scrollPosRef.current += pixelsPerSecond * delta;
+    
+    if (textRef.current) {
+      textRef.current.style.transform = `translateY(-${scrollPosRef.current}px)`;
+    }
+
+    const pct = maxScroll > 0 ? Math.min(100, (scrollPosRef.current / maxScroll) * 100) : 0;
     setProgress(pct);
 
-    if (el.scrollTop < maxScroll) {
+    if (scrollPosRef.current < maxScroll) {
       rafRef.current = requestAnimationFrame(scroll);
     } else {
       setIsPlaying(false);
     }
   }, [pixelsPerSecond]);
 
+  // Handle play/pause state changes
   useEffect(() => {
-    if (isPlaying) {
+    if (!isPlaying) {
       lastTimeRef.current = 0;
-      rafRef.current = requestAnimationFrame(scroll);
-    } else {
       cancelAnimationFrame(rafRef.current);
-      lastTimeRef.current = 0;
+    } else {
+      rafRef.current = requestAnimationFrame(scroll);
     }
     return () => cancelAnimationFrame(rafRef.current);
-  }, [isPlaying, scroll]);
+  }, [isPlaying]);
+
+  // Handle speed/scroll changes separately to avoid timer resets
+  useEffect(() => {
+    if (isPlaying) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(scroll);
+    }
+  }, [scroll, isPlaying]);
 
   const handleReset = () => {
     setIsPlaying(false);
     setProgress(0);
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    scrollPosRef.current = 0;
+    if (textRef.current) textRef.current.style.transform = 'translateY(0)';
   };
 
   const handleStartPrompter = () => {
@@ -241,16 +262,18 @@ export default function App() {
           maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 75%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 75%, transparent 100%)',
         }}>
-        <p style={{
-          fontSize: fontSize,
-          lineHeight: 1.75,
-          color: '#fff',
-          fontFamily: 'DM Sans, Inter, sans-serif',
-          fontWeight: 500,
-          whiteSpace: 'pre-wrap',
-          textAlign: 'center',
-          paddingBottom: '80vh',
-        }}>
+        <p
+          ref={textRef}
+          style={{
+            fontSize: fontSize,
+            lineHeight: 1.75,
+            color: '#fff',
+            fontFamily: 'DM Sans, Inter, sans-serif',
+            fontWeight: 500,
+            whiteSpace: 'pre-wrap',
+            textAlign: 'center',
+            paddingBottom: '80vh',
+          }}>
           {text}
         </p>
       </div>
