@@ -234,7 +234,7 @@ export default function App() {
           }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nastavenia</label>
 
-            <SettingSlider id="speed-slider" label="Rýchlosť posúvania" value={speed} min={1} max={10} step={0.5}
+            <SettingSlider id="speed-slider" label="Rýchlosť posúvania" value={speed} min={0.25} max={10} step={0.25}
               onChange={setSpeed} displayValue={`${speed}x`} />
             <SettingSlider id="font-size-slider" label="Veľkosť písma" value={fontSize} min={18} max={72} step={2}
               onChange={setFontSize} displayValue={`${fontSize}px`} />
@@ -395,7 +395,7 @@ export default function App() {
             border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px 24px',
             minWidth: 280, display: 'flex', flexDirection: 'column', gap: 20,
           }}>
-            <SettingSlider id="prompter-speed-slider" label="Rýchlosť" value={speed} min={1} max={10} step={0.5}
+            <SettingSlider id="prompter-speed-slider" label="Rýchlosť" value={speed} min={0.25} max={10} step={0.25}
               onChange={setSpeed} displayValue={`${speed}x`} dark />
             <SettingSlider id="prompter-font-slider" label="Veľkosť písma" value={fontSize} min={18} max={72} step={2}
               onChange={setFontSize} displayValue={`${fontSize}px`} dark />
