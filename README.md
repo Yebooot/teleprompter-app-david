@@ -9,3 +9,6 @@ A clean, distraction-free teleprompter app. Paste your script, set your speed, a
 - Dark mode by default
 - Progress tracking
 - Keyboard shortcuts
+
+---
+*Deployed with Vercel*
